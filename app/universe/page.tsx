@@ -1,21 +1,24 @@
 import { UniverseCanvas } from "@/components/three/UniverseCanvas";
 import { LangToggle } from "@/components/ui/LangToggle";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function UniversePage() {
-  // Fetch all public planets so the client can highlight owned ones in the procedural grid
-  const supabase = await createSupabaseServerClient();
-  const { data: planets } = await supabase
-    .from("planets")
-    .select("id, name, universe_x, universe_y, universe_z, palette")
-    .in("visibility", ["public", "unlisted"]);
+  let planets: Array<{ id: string; name: string; universe_x: number; universe_y: number; universe_z: number; palette: unknown }> = [];
+  if (isSupabaseConfigured()) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("planets")
+      .select("id, name, universe_x, universe_y, universe_z, palette")
+      .in("visibility", ["public", "unlisted"]);
+    planets = data ?? [];
+  }
 
   // Map procedural id "sx:sy:sz:0" → planet meta (best-effort: first planet in each sector)
   const ownedMap = new Map<string, { name: string; palette?: { primary: string } }>();
-  for (const p of planets ?? []) {
+  for (const p of planets) {
     ownedMap.set(`${p.universe_x}:${p.universe_y}:${p.universe_z}:0`, {
       name: p.name,
       palette: p.palette as { primary: string } | undefined,

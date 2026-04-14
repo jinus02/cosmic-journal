@@ -35,7 +35,7 @@ export async function analyzeJournalEntry(bodyMd: string): Promise<AnalysisResul
         responseMimeType: "application/json",
         responseSchema: GeminiResponseSchema as never,
         // CRITICAL: disable thinking for JSON tasks (errors_log #22)
-        thinkingConfig: { thinkingBudget: 0 },
+        thinkingConfig: { thinkingBudget: 0 } as never,
         temperature: 0.85,
         maxOutputTokens: 1024,
       },
