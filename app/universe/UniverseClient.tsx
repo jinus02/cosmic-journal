@@ -2,7 +2,12 @@
 import { useMemo } from "react";
 import { UniverseCanvas } from "@/components/three/UniverseCanvas";
 
-export function UniverseClient({ ownedJson }: { ownedJson: string }) {
+interface Props {
+  ownedJson: string;
+  isAuthenticated?: boolean;
+}
+
+export function UniverseClient({ ownedJson, isAuthenticated = false }: Props) {
   const ownedMap = useMemo(() => {
     try {
       const entries = JSON.parse(ownedJson) as Array<[string, { name: string; palette?: { primary: string } }]>;
@@ -12,5 +17,5 @@ export function UniverseClient({ ownedJson }: { ownedJson: string }) {
     }
   }, [ownedJson]);
 
-  return <UniverseCanvas ownedPlanets={ownedMap} />;
+  return <UniverseCanvas ownedPlanets={ownedMap} isAuthenticated={isAuthenticated} />;
 }

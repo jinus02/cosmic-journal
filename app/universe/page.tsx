@@ -34,7 +34,7 @@ export default async function UniversePage() {
 
   return (
     <main className="relative h-screen w-screen">
-      <UniverseClient ownedJson={ownedJson} />
+      <UniverseClient ownedJson={ownedJson} isAuthenticated={Boolean(email)} />
       <div className="absolute right-4 top-4 z-30 flex items-center gap-3">
         <LangToggle />
         <SessionBadge email={email} />

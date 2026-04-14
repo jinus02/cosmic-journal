@@ -31,6 +31,8 @@
   "editor.error.authRequired": "Please sign in to leave a planet.",
   "editor.error.claimed": "Another traveler already claimed this coordinate. Try a new space.",
   "editor.error.generic": "Something went wrong. Please try again in a moment.",
+  "editor.demoBadge": "Demo — nothing will be saved. Sign in to keep your planet.",
+  "editor.demoSaveHint": "This is a preview. Sign in to save this planet to the universe.",
   "universe.hint.desktop": "WASD to fly · drag to look · click empty space to plant a new world.",
   "universe.hint.mobile": "Drag to look · tap empty space to plant a new world.",
   "common.cancel": "Cancel",

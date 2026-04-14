@@ -12,6 +12,7 @@ import { sectorOf } from "@/lib/procedural/sectors";
 
 interface Props {
   ownedPlanets?: Map<string, { name: string; palette?: { primary: string } }>;
+  isAuthenticated?: boolean;
 }
 
 function EmptySpaceClicker({ onPick }: { onPick: (p: PlanetDescriptor) => void }) {
@@ -50,7 +51,7 @@ function EmptySpaceClicker({ onPick }: { onPick: (p: PlanetDescriptor) => void }
   return null;
 }
 
-export function UniverseCanvas({ ownedPlanets }: Props) {
+export function UniverseCanvas({ ownedPlanets, isAuthenticated = false }: Props) {
   const t = useI18n();
   const [selected, setSelected] = useState<PlanetDescriptor | null>(null);
   const [hintVisible, setHintVisible] = useState(false);
@@ -117,6 +118,7 @@ export function UniverseCanvas({ ownedPlanets }: Props) {
         <JournalEditor
           planet={selected}
           onClose={() => setSelected(null)}
+          isAuthenticated={isAuthenticated}
         />
       )}
     </div>

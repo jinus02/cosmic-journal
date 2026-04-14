@@ -8,9 +8,10 @@ import { useI18n } from "@/lib/i18n/useI18n";
 interface Props {
   planet: PlanetDescriptor;
   onClose: () => void;
+  isAuthenticated?: boolean;
 }
 
-export function JournalEditor({ planet, onClose }: Props) {
+export function JournalEditor({ planet, onClose, isAuthenticated = false }: Props) {
   const t = useI18n();
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -49,6 +50,13 @@ export function JournalEditor({ planet, onClose }: Props) {
         return;
       }
       const { result: analysis } = (await analyzeRes.json()) as { result: AnalysisResult };
+
+      // Demo mode: show the analysis but skip persistence.
+      if (!isAuthenticated) {
+        setResult(analysis);
+        setPhase("result");
+        return;
+      }
 
       const createRes = await fetch("/api/planet/create", {
         method: "POST",
@@ -112,6 +120,11 @@ export function JournalEditor({ planet, onClose }: Props) {
               <p className="text-sm text-cosmos-star/60 mt-1">
                 {t("editor.subtitle")} · <span className="font-mono">{planet.biome}</span> · r={planet.radius.toFixed(0)}
               </p>
+              {!isAuthenticated && (
+                <p className="mt-2 text-xs font-mono text-cosmos-aurora/80">
+                  🛰 {t("editor.demoBadge")}
+                </p>
+              )}
             </div>
             <input
               type="text"
@@ -185,6 +198,14 @@ export function JournalEditor({ planet, onClose }: Props) {
               {result.poem}
             </pre>
             <p className="text-sm text-cosmos-star/60">{result.summary}</p>
+            {!isAuthenticated && (
+              <div className="rounded-lg border border-cosmos-aurora/40 bg-cosmos-aurora/5 px-4 py-3 text-sm text-cosmos-star/80">
+                {t("editor.demoSaveHint")}{" "}
+                <a href="/login" className="text-cosmos-aurora underline underline-offset-2 hover:text-cosmos-star">
+                  {t("nav.signin")} →
+                </a>
+              </div>
+            )}
             <div className="flex justify-end gap-3">
               <button
                 onClick={onClose}

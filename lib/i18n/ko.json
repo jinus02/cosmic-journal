@@ -31,6 +31,8 @@
   "editor.error.authRequired": "행성을 남기려면 로그인이 필요해요.",
   "editor.error.claimed": "이 좌표는 이미 다른 여행자가 선점했어요. 다른 공간을 찾아보세요.",
   "editor.error.generic": "문제가 생겼어요. 잠시 후 다시 시도해주세요.",
+  "editor.demoBadge": "데모 모드 — 저장되지 않아요. 로그인하면 행성을 우주에 남길 수 있어요.",
+  "editor.demoSaveHint": "미리보기예요. 이 행성을 우주에 간직하려면 로그인하세요.",
   "universe.hint.desktop": "WASD 로 비행 · 드래그로 회전 · 빈 공간을 클릭해 행성을 심어보세요.",
   "universe.hint.mobile": "드래그로 회전 · 빈 공간을 탭해 행성을 심어보세요.",
   "common.cancel": "취소",
