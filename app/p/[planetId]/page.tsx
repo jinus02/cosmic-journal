@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { CommentList } from "@/components/ui/CommentList";
+import { LangToggle } from "@/components/ui/LangToggle";
+import { SessionBadge } from "@/components/ui/SessionBadge";
 import Link from "next/link";
 
 interface Params {
@@ -10,6 +12,7 @@ interface Params {
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { planetId } = await params;
+  if (!isSupabaseConfigured()) return { title: "Cosmic Journal" };
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("planets")
@@ -31,14 +34,19 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
 export default async function PlanetSharePage({ params }: { params: Promise<Params> }) {
   const { planetId } = await params;
+  if (!isSupabaseConfigured()) notFound();
   const supabase = await createSupabaseServerClient();
 
-  const { data: planet } = await supabase
-    .from("planets")
-    .select("id, name, biome, palette, radius, created_at, owner_id")
-    .eq("id", planetId)
-    .maybeSingle();
+  const [{ data: planet }, { data: userRes }] = await Promise.all([
+    supabase
+      .from("planets")
+      .select("id, name, biome, palette, radius, created_at, owner_id")
+      .eq("id", planetId)
+      .maybeSingle(),
+    supabase.auth.getUser(),
+  ]);
   if (!planet) notFound();
+  const email = userRes?.user?.email ?? null;
 
   const { data: entries } = await supabase
     .from("journal_entries")
@@ -57,7 +65,11 @@ export default async function PlanetSharePage({ params }: { params: Promise<Para
   };
 
   return (
-    <main className="min-h-screen px-6 py-12 max-w-3xl mx-auto" style={{ overflow: "auto" }}>
+    <main className="relative min-h-screen px-6 py-12 max-w-3xl mx-auto" style={{ overflow: "auto" }}>
+      <div className="fixed right-4 top-4 z-30 flex items-center gap-3">
+        <LangToggle />
+        <SessionBadge email={email} />
+      </div>
       <Link href="/universe" className="text-xs font-mono text-cosmos-star/60 hover:text-cosmos-star">
         ← back to the universe
       </Link>

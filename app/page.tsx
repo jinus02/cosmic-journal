@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 export default function Landing() {
+  const configured = isSupabaseConfigured();
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <div
@@ -15,7 +17,7 @@ export default function Landing() {
           Cosmic Journal
         </h1>
         <p className="mt-4 text-cosmos-star/70 text-lg md:text-xl max-w-xl">
-          Walk an infinite universe.<br />Leave a planet shaped by the words you couldn't say.
+          Walk an infinite universe.<br />Leave a planet shaped by the words you couldn&apos;t say.
         </p>
         <div className="mt-10 flex gap-4">
           <Link
@@ -31,6 +33,14 @@ export default function Landing() {
             Sign in
           </Link>
         </div>
+        <p className="mt-4 text-xs text-cosmos-star/40">
+          Explore without login · Sign in to leave a planet
+        </p>
+        {!configured && (
+          <div className="mt-8 rounded-full border border-cosmos-aurora/40 bg-cosmos-aurora/5 px-4 py-2 text-xs font-mono text-cosmos-star/70">
+            🛰 Demo mode — read-only until Supabase &amp; Gemini keys are set
+          </div>
+        )}
         <p className="mt-16 text-xs text-cosmos-star/40 font-mono">
           made with three.js · gemini · supabase · vercel
         </p>

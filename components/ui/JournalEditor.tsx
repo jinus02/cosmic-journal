@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PlanetDescriptor } from "@/lib/procedural/planetGen";
 import type { AnalysisResult } from "@/lib/gemini/schema";
 import { useI18n } from "@/lib/i18n/useI18n";
@@ -11,31 +12,44 @@ interface Props {
 
 export function JournalEditor({ planet, onClose }: Props) {
   const t = useI18n();
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [phase, setPhase] = useState<"write" | "analyzing" | "result">("write");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [createdPlanetId, setCreatedPlanetId] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
 
   const submit = async () => {
+    if (phase !== "write") return;
     if (body.trim().length < 10) {
       setError(t("editor.tooShort"));
       return;
     }
     setError(null);
+    setAuthRequired(false);
     setPhase("analyzing");
 
     try {
-      // 1) Analyze
       const analyzeRes = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ body_md: body }),
       });
-      if (!analyzeRes.ok) throw new Error(`analyze ${analyzeRes.status}`);
+      if (analyzeRes.status === 401) {
+        setAuthRequired(true);
+        setError(t("editor.error.authRequired"));
+        setPhase("write");
+        return;
+      }
+      if (!analyzeRes.ok) {
+        setError(t("editor.error.generic"));
+        setPhase("write");
+        return;
+      }
       const { result: analysis } = (await analyzeRes.json()) as { result: AnalysisResult };
 
-      // 2) Create planet + entry
       const createRes = await fetch("/api/planet/create", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -49,18 +63,35 @@ export function JournalEditor({ planet, onClose }: Props) {
           analysis,
         }),
       });
-      if (!createRes.ok) {
-        const detail = await createRes.text();
-        throw new Error(`create ${createRes.status}: ${detail}`);
+      if (createRes.status === 401) {
+        setAuthRequired(true);
+        setError(t("editor.error.authRequired"));
+        setPhase("write");
+        return;
       }
+      if (createRes.status === 409) {
+        setError(t("editor.error.claimed"));
+        setPhase("write");
+        return;
+      }
+      if (!createRes.ok) {
+        setError(t("editor.error.generic"));
+        setPhase("write");
+        return;
+      }
+      const created = (await createRes.json()) as { planet_id?: string };
+      if (created.planet_id) setCreatedPlanetId(created.planet_id);
 
       setResult(analysis);
       setPhase("result");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "unknown";
-      setError(msg);
+    } catch {
+      setError(t("editor.error.generic"));
       setPhase("write");
     }
+  };
+
+  const visitPlanet = () => {
+    if (createdPlanetId) router.push(`/p/${createdPlanetId}`);
   };
 
   return (
@@ -96,7 +127,19 @@ export function JournalEditor({ planet, onClose }: Props) {
               placeholder={t("editor.bodyPlaceholder")}
               className="w-full rounded-lg bg-cosmos-void/60 border border-cosmos-aurora/20 px-4 py-3 text-cosmos-star placeholder:text-cosmos-star/30 focus:outline-none focus:border-cosmos-aurora resize-none font-body leading-relaxed"
             />
-            {error && <p className="text-cosmos-flare text-sm">{error}</p>}
+            {error && (
+              <div className="text-cosmos-flare text-sm">
+                <p>{error}</p>
+                {authRequired && (
+                  <a
+                    href="/login"
+                    className="mt-1 inline-block text-cosmos-aurora underline underline-offset-2 hover:text-cosmos-star"
+                  >
+                    {t("nav.signin")} →
+                  </a>
+                )}
+              </div>
+            )}
             <div className="flex justify-end gap-3">
               <button
                 onClick={onClose}
@@ -106,7 +149,8 @@ export function JournalEditor({ planet, onClose }: Props) {
               </button>
               <button
                 onClick={submit}
-                className="px-6 py-2 rounded-lg bg-cosmos-aurora/20 border border-cosmos-aurora text-cosmos-star hover:bg-cosmos-aurora/40 transition"
+                disabled={phase !== "write" || body.trim().length < 10}
+                className="px-6 py-2 rounded-lg bg-cosmos-aurora/20 border border-cosmos-aurora text-cosmos-star hover:bg-cosmos-aurora/40 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t("editor.submit")}
               </button>
@@ -141,13 +185,21 @@ export function JournalEditor({ planet, onClose }: Props) {
               {result.poem}
             </pre>
             <p className="text-sm text-cosmos-star/60">{result.summary}</p>
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={onClose}
-                className="px-6 py-2 rounded-lg bg-cosmos-aurora/20 border border-cosmos-aurora text-cosmos-star hover:bg-cosmos-aurora/40"
+                className="px-4 py-2 rounded-lg border border-cosmos-star/20 text-cosmos-star/70 hover:text-cosmos-star"
               >
-                {t("common.done")}
+                {t("editor.continue")}
               </button>
+              {createdPlanetId && (
+                <button
+                  onClick={visitPlanet}
+                  className="px-6 py-2 rounded-lg bg-cosmos-aurora/20 border border-cosmos-aurora text-cosmos-star hover:bg-cosmos-aurora/40"
+                >
+                  {t("editor.visit")} →
+                </button>
+              )}
             </div>
           </div>
         )}

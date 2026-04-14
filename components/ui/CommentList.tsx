@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  createSupabaseBrowserClient,
+  isSupabaseBrowserConfigured,
+} from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n/useI18n";
 
 interface Comment {
@@ -15,11 +18,14 @@ export function CommentList({ entryId }: { entryId: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const configured = isSupabaseBrowserConfigured();
 
   useEffect(() => {
+    if (!configured) return;
     const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
 
-    // Initial load
     supabase
       .from("comments")
       .select("id, body, created_at, author_id")
@@ -27,7 +33,6 @@ export function CommentList({ entryId }: { entryId: string }) {
       .order("created_at", { ascending: true })
       .then(({ data }) => setComments(data ?? []));
 
-    // Realtime
     const channel = supabase
       .channel(`comments:${entryId}`)
       .on(
@@ -42,22 +47,39 @@ export function CommentList({ entryId }: { entryId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [entryId]);
+  }, [entryId, configured]);
 
   const send = async () => {
     if (!draft.trim()) return;
     setPosting(true);
+    setError(null);
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ entry_id: entryId, body: draft.trim() }),
       });
-      if (res.ok) setDraft("");
+      if (res.status === 401) {
+        setError(t("editor.error.authRequired"));
+        return;
+      }
+      if (!res.ok) {
+        setError(t("editor.error.generic"));
+        return;
+      }
+      setDraft("");
     } finally {
       setPosting(false);
     }
   };
+
+  if (!configured) {
+    return (
+      <section className="mt-6 rounded-lg border border-cosmos-aurora/20 bg-cosmos-deep/40 px-4 py-3 text-xs text-cosmos-star/50">
+        {t("share.commentsDisabled")}
+      </section>
+    );
+  }
 
   return (
     <section className="mt-6 space-y-3">
@@ -77,15 +99,19 @@ export function CommentList({ entryId }: { entryId: string }) {
           onChange={(e) => setDraft(e.target.value)}
           placeholder={t("share.commentPlaceholder")}
           className="flex-1 rounded bg-cosmos-deep border border-cosmos-aurora/20 px-3 py-2 text-sm text-cosmos-star placeholder:text-cosmos-star/30 focus:outline-none focus:border-cosmos-aurora"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !posting) send();
+          }}
         />
         <button
           onClick={send}
-          disabled={posting}
+          disabled={posting || !draft.trim()}
           className="rounded border border-cosmos-aurora bg-cosmos-aurora/20 px-4 py-2 text-sm text-cosmos-star hover:bg-cosmos-aurora/40 disabled:opacity-50"
         >
-          {t("share.send")}
+          {posting ? "…" : t("share.send")}
         </button>
       </div>
+      {error && <p className="text-xs text-cosmos-flare">{error}</p>}
     </section>
   );
 }
