@@ -1,6 +1,11 @@
 "use client";
 import { useMemo } from "react";
-import { UniverseCanvas } from "@/components/three/UniverseCanvas";
+import dynamic from "next/dynamic";
+
+const UniverseCanvas = dynamic(
+  () => import("@/components/three/UniverseCanvas").then((m) => m.UniverseCanvas),
+  { ssr: false },
+);
 
 interface Props {
   ownedJson: string;
