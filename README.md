@@ -17,7 +17,9 @@ npm install
 
 # 1) Supabase 프로젝트 생성 (https://supabase.com)
 #    - 새 프로젝트 → Settings > API 에서 URL/anon/service_role 복사
-#    - SQL Editor 열고 supabase/migrations/0001_init.sql 전체 실행
+#    - SQL Editor에서 0001_init.sql 다음 0002_security_boundaries.sql을 순서대로 실행
+#    - 기존 운영 DB는 0002만 적용하고 소유권·사용량 제한 검증 후 앱을 배포
+#    - 0002가 없으면 AI 요청은 안전을 위해 503으로 차단됨
 
 # 2) 환경변수 설정
 cp .env.local.example .env.local
